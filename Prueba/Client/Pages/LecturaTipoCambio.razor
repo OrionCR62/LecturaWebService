@@ -1,0 +1,54 @@
+﻿@page "/tipoCambio"
+@using System.Text.Json
+@using System.Text.Json.Serialization;
+@using System.Net.Http;
+@inject IHttpClientFactory ClientFactory
+
+    @* se instalo el microsoft.extensions.http*@
+
+    <h3>Tipo Cambio</h3>
+
+
+
+    @code {
+        private IEnumerable<GitHubBranch> branches = Array.Empty<GitHubBranch>();
+        private bool getBranchesError;
+        private bool shouldRender;
+        private string ruta = "https://gee.bccr.fi.cr/Indicadores/Suscripciones/WS/wsindicadoreseconomicos.asmx/ObtenerIndicadoresEconomicos?Indicador=318";
+
+
+
+        protected override bool ShouldRender() => shouldRender;
+
+        protected override async Task OnInitializedAsync()
+        {
+
+
+            ruta = ruta + "&FechaInicio=29/10/2021&FechaFinal=29/10/2021&Nombre=Rafael Mora&SubNiveles=N&CorreoElectronico=rafael.mora@orioncr.com&Token=OAA";
+
+            var request = new HttpRequestMessage(HttpMethod.Get, ruta);
+
+            var client = ClientFactory.CreateClient();
+
+            var response = await client.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var responseStream = await response.Content.ReadAsStreamAsync();
+                branches = await JsonSerializer.DeserializeAsync
+                    <IEnumerable<GitHubBranch>>(responseStream);
+            }
+            else
+            {
+                getBranchesError = true;
+            }
+
+            shouldRender = true;
+        }
+
+        public class GitHubBranch
+        {
+            [JsonPropertyName("name")]
+            public string Name { get; set; }
+        }
+    }
